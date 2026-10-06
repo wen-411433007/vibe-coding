@@ -1,0 +1,1671 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>陌生人的窗</title>
+<meta name="description" content="此刻，世界另一端的天空">
+<style>
+:root{
+  --wall:#14121a;
+  --spill:rgba(120,140,200,.16);
+  --curtainB:.6;
+  --ink:#f3ede2;
+  --ink-dim:rgba(243,237,226,.6);
+  --serif:"Noto Serif TC","Source Han Serif TC","Songti TC","PMingLiU","MingLiU",serif;
+  --sans:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{
+  background-color:var(--wall);color:var(--ink);font-family:var(--sans);
+  overflow:hidden;transition:background-color 2s ease;
+  -webkit-tap-highlight-color:transparent;
+}
+button{font:inherit;color:inherit}
+
+/* ---------- 房間 ---------- */
+#room{
+  position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:16px;
+  background:
+    radial-gradient(ellipse 65% 55% at 50% 42%, var(--spill), transparent 72%),
+    repeating-linear-gradient(90deg, rgba(255,255,255,.017) 0 2px, transparent 2px 46px);
+}
+#stage{position:relative;margin-top:30px;width:min(90vw,980px,calc((100vh - 270px) * 1.5))}
+#rod{
+  position:absolute;left:-7%;right:-7%;top:-30px;height:7px;border-radius:4px;z-index:6;
+  background:linear-gradient(#8d7c68,#463a2f);box-shadow:0 3px 5px rgba(0,0,0,.4);
+}
+#rod::before,#rod::after{
+  content:"";position:absolute;top:-4px;width:15px;height:15px;border-radius:50%;
+  background:radial-gradient(circle at 35% 35%,#b9a283,#463a2f);
+}
+#rod::before{left:-9px}#rod::after{right:-9px}
+#frame{
+  position:relative;padding:clamp(8px,1.4vw,14px);border-radius:3px;
+  background:linear-gradient(135deg,#7a5639,#583c27 40%,#6e4c32);
+  box-shadow:0 0 0 2px #36261a,0 18px 40px rgba(0,0,0,.45);
+}
+#view{position:relative;width:100%;aspect-ratio:3/2;overflow:hidden;background:#05060d}
+#view canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+#view::after{content:"";position:absolute;inset:0;box-shadow:inset 0 0 26px rgba(0,0,0,.38);pointer-events:none;z-index:3}
+.bar{position:absolute;z-index:2;box-shadow:0 0 6px rgba(0,0,0,.35)}
+.bar.v{top:0;bottom:0;left:50%;transform:translateX(-50%);width:10px;background:linear-gradient(90deg,#5b3f2a,#7c583a,#5b3f2a)}
+.bar.h{left:0;right:0;top:36%;transform:translateY(-50%);height:10px;background:linear-gradient(180deg,#7c583a,#5b3f2a)}
+#sill{
+  position:relative;height:16px;margin:0 -4%;border-radius:2px;z-index:6;
+  background:linear-gradient(180deg,#9c7552 0,#7d5a3d 45%,#543a26 100%);
+  box-shadow:0 10px 18px rgba(0,0,0,.4);
+}
+
+/* ---------- 窗簾 ---------- */
+.curtain{
+  position:absolute;top:-24px;bottom:16px;width:56%;z-index:5;border-radius:0 0 4px 4px;
+  background:
+    linear-gradient(180deg,rgba(255,255,255,.05),rgba(0,0,0,.24)),
+    repeating-linear-gradient(90deg,#c7b391 0,#e7dbc2 10px,#f3eadb 18px,#d9c7a6 28px,#c7b391 40px);
+  filter:brightness(var(--curtainB));
+  box-shadow:0 10px 30px rgba(0,0,0,.35);
+  transition:transform 2.4s cubic-bezier(.65,.02,.25,1),filter 2s;
+}
+.curtain.left{left:-5%;transform-origin:left center}
+.curtain.right{right:-5%;transform-origin:right center}
+#stage.open .curtain{transform:scaleX(.16)}
+#status{
+  position:absolute;left:0;right:0;top:45%;z-index:7;text-align:center;pointer-events:none;
+  font-family:var(--serif);font-size:15px;letter-spacing:.12em;color:#fff;
+  text-shadow:0 1px 8px rgba(0,0,0,.6);opacity:0;transition:opacity .8s;
+}
+#status.show{opacity:.92}
+
+/* ---------- 紙條 / 控制 ---------- */
+#note{
+  margin-top:14px;padding:10px 20px 11px;border-radius:2px;max-width:min(92vw,520px);
+  background:#f3ead8;color:#3b3229;font-family:var(--serif);text-align:center;line-height:1.65;
+  transform:rotate(-1.1deg);box-shadow:0 6px 14px rgba(0,0,0,.35);
+  opacity:0;transition:opacity 1.2s;
+}
+#note.show{opacity:1}
+#note .n1{font-size:13px;color:#7a6d5e}
+#note .n2{font-size:16px}
+#note .n3{font-size:12px;color:#8a7d6c;margin-top:2px}
+#controls{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;margin-top:16px}
+.btn{
+  background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.2);border-radius:999px;
+  padding:9px 18px;font-size:14px;letter-spacing:.06em;cursor:pointer;
+  transition:background .2s,opacity .3s;
+}
+.btn:hover{background:rgba(255,255,255,.16)}
+.btn:disabled{opacity:.35;cursor:default}
+.btn:focus-visible{outline:2px solid rgba(255,255,255,.7);outline-offset:2px}
+#timer{
+  position:fixed;right:18px;bottom:14px;font-size:12.5px;letter-spacing:.06em;color:var(--ink-dim);
+  opacity:0;transition:opacity 1s;
+}
+#timer.show{opacity:1}
+
+/* ---------- 開場 / 結束 ---------- */
+#intro{
+  position:fixed;inset:0;z-index:50;background:#000;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:22px;text-align:center;padding:16px;
+  transition:opacity 1.4s ease;
+}
+#intro.gone{opacity:0;pointer-events:none}
+#intro h1{
+  margin:0;font-family:var(--serif);font-weight:400;font-size:clamp(20px,4vw,30px);
+  letter-spacing:.22em;color:#eee6d8;opacity:0;animation:fadeUp 2s .3s forwards;
+}
+#intro p{margin:0;font-size:14px;letter-spacing:.16em;color:rgba(238,230,216,.55);opacity:0;animation:fadeUp 1.6s 1.7s forwards}
+#intro .hint{position:absolute;bottom:12%;left:0;right:0;font-size:12px;color:rgba(238,230,216,.38);animation-delay:2.4s}
+#intro .hint.on{color:rgba(238,230,216,.7)}
+@keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+#ending{
+  position:fixed;inset:0;z-index:30;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:10px;text-align:center;padding:16px;background:rgba(6,5,10,.62);
+  opacity:0;pointer-events:none;transition:opacity 1.2s;
+}
+#ending.show{opacity:1;pointer-events:auto}
+#ending .l1{margin:0;font-family:var(--serif);font-size:15px;letter-spacing:.14em;color:var(--ink-dim)}
+#ending .l2{margin:0 0 14px;font-family:var(--serif);font-size:clamp(19px,3.4vw,26px);letter-spacing:.12em}
+#ending .row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+
+/* ---------- 收藏牆 ---------- */
+#wall{
+  position:fixed;inset:0;z-index:40;overflow:auto;padding:28px 16px 40px;
+  background:rgba(12,10,15,.985);opacity:0;pointer-events:none;transition:opacity .5s;
+}
+#wall.show{opacity:1;pointer-events:auto}
+.wall-inner{max-width:1080px;margin:0 auto}
+.wall-head{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:26px}
+.wall-head h2{margin:0;font-family:var(--serif);font-weight:400;font-size:24px;letter-spacing:.16em}
+.wall-head .sub{font-size:13px;color:var(--ink-dim);margin-top:6px;letter-spacing:.06em}
+.wall-head .acts{display:flex;gap:8px}
+#wallGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:28px 22px}
+.wi{cursor:pointer;background:none;border:0;padding:0;text-align:center}
+.wi .pic{
+  display:block;padding:7px;border-radius:2px;
+  background:linear-gradient(135deg,#7a5639,#583c27 45%,#6e4c32);
+  box-shadow:0 8px 18px rgba(0,0,0,.45);transition:transform .25s;
+}
+.wi:hover .pic,.wi:focus-visible .pic{transform:translateY(-3px) rotate(-.6deg)}
+.wi img{display:block;width:100%;aspect-ratio:3/2;object-fit:cover}
+.wi .c1{display:block;margin-top:10px;font-family:var(--serif);font-size:14px;letter-spacing:.06em}
+.wi .c2{display:block;margin-top:2px;font-size:12px;color:var(--ink-dim)}
+#wallEmpty{text-align:center;color:var(--ink-dim);font-family:var(--serif);letter-spacing:.1em;padding:80px 0;line-height:2}
+
+#lightbox{
+  position:fixed;inset:0;z-index:45;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:14px;padding:16px;background:rgba(0,0,0,.86);opacity:0;pointer-events:none;transition:opacity .4s;cursor:zoom-out;
+}
+#lightbox.show{opacity:1;pointer-events:auto}
+#lightbox .pic{padding:10px;background:linear-gradient(135deg,#7a5639,#583c27 45%,#6e4c32);box-shadow:0 20px 50px rgba(0,0,0,.6)}
+#lightbox img{display:block;max-width:min(88vw,960px);max-height:72vh}
+#lbCap{font-family:var(--serif);text-align:center;line-height:1.8;letter-spacing:.06em}
+#lbCap small{display:block;color:var(--ink-dim);font-family:var(--sans);font-size:12px}
+
+@media (max-aspect-ratio:4/5){
+  #stage{width:min(86vw,calc((100vh - 330px) * .75))}
+  #view{aspect-ratio:3/4}
+  .wi img{aspect-ratio:auto}
+}
+@media (max-width:520px){
+  #note .n2{font-size:15px}
+  .btn{padding:8px 14px;font-size:13px}
+  #timer{left:0;right:0;text-align:center;bottom:10px}
+}
+@media (prefers-reduced-motion:reduce){
+  .curtain{transition-duration:.8s}
+}
+</style>
+</head>
+<body>
+
+<div id="room">
+  <div id="stage">
+    <div id="rod"></div>
+    <div id="frame">
+      <div id="view">
+        <canvas id="sky"></canvas>
+        <canvas id="glass"></canvas>
+        <div class="bar v"></div>
+        <div class="bar h"></div>
+      </div>
+    </div>
+    <div id="sill"></div>
+    <div class="curtain left"></div>
+    <div class="curtain right"></div>
+    <div id="status"></div>
+  </div>
+  <div id="note" aria-live="polite">
+    <div class="n1">這扇窗的另一邊，</div>
+    <div class="n2" id="noteMain"></div>
+    <div class="n3" id="noteSub"></div>
+  </div>
+  <div id="controls">
+    <button class="btn" id="btnClose" disabled>關上窗</button>
+    <button class="btn" id="btnNext" disabled>換一扇窗</button>
+    <button class="btn" id="btnWall">收藏牆</button>
+    <button class="btn" id="btnSound" aria-pressed="false">開啟聲音</button>
+  </div>
+</div>
+<div id="timer"></div>
+
+<div id="ending" role="dialog" aria-label="窗戶關上了">
+  <p class="l1">這扇窗關上了。</p>
+  <p class="l2" id="endText"></p>
+  <div class="row">
+    <button class="btn" id="btnAgain">再找一扇窗</button>
+    <button class="btn" id="btnWall2">收藏牆</button>
+  </div>
+</div>
+
+<div id="wall" role="dialog" aria-label="窗景收藏牆">
+  <div class="wall-inner">
+    <div class="wall-head">
+      <div>
+        <h2>窗景收藏牆</h2>
+        <div class="sub" id="wallSub"></div>
+      </div>
+      <div class="acts">
+        <button class="btn" id="btnClear">清空收藏</button>
+        <button class="btn" id="btnWallClose">關閉</button>
+      </div>
+    </div>
+    <div id="wallGrid"></div>
+    <div id="wallEmpty">牆上還沒有窗。<br>關上一扇窗，它就會掛在這裡。</div>
+  </div>
+</div>
+
+<div id="lightbox" role="dialog" aria-label="放大檢視">
+  <div class="pic"><img id="lbImg" alt=""></div>
+  <div id="lbCap"></div>
+</div>
+
+<div id="intro">
+  <h1>此刻，世界另一端的天空</h1>
+  <p>正在替你尋找一扇窗……</p>
+  <p class="hint" id="introHint">輕觸畫面，聽見窗外的聲音</p>
+</div>
+
+<script>
+(() => {
+'use strict';
+
+/* =========================================================
+   常數與工具
+   ========================================================= */
+const H_BAR = 0.36;                       // 橫向窗框的位置（佔窗高比例）
+const STORE_KEY = 'strangerWindow.wall.v1';
+const MAX_WALL = 60;
+
+const $ = s => document.querySelector(s);
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const lerp = (a, b, t) => a + (b - a) * t;
+const smooth = t => t * t * (3 - 2 * t);
+const TAU = Math.PI * 2;
+
+function hex(h) {
+  h = h.replace('#', '');
+  return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)];
+}
+function mix(a, b, t) { return [lerp(a[0], b[0], t), lerp(a[1], b[1], t), lerp(a[2], b[2], t)]; }
+function rgba(c, a = 1) { return `rgba(${c[0] | 0},${c[1] | 0},${c[2] | 0},${a})`; }
+function lum(c) { return c[0] * .3 + c[1] * .59 + c[2] * .11; }
+function mulberry32(a) {
+  return function () {
+    a |= 0; a = a + 0x6D2B79F5 | 0;
+    let t = Math.imul(a ^ a >>> 15, 1 | a);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+function mkCanvas(w, h) {
+  const c = document.createElement('canvas');
+  c.width = Math.max(1, Math.ceil(w)); c.height = Math.max(1, Math.ceil(h));
+  return c;
+}
+
+/* =========================================================
+   世界地點（只存時區、緯度、景觀類型，不顯示名稱）
+   ========================================================= */
+const LOCATIONS = [
+  ['Asia/Tokyo', 35.7, 'city'], ['Asia/Seoul', 37.5, 'city'], ['Asia/Shanghai', 31.2, 'city'],
+  ['Asia/Hong_Kong', 22.3, 'city'], ['Asia/Taipei', 25.0, 'town'], ['Asia/Bangkok', 13.7, 'city'],
+  ['Asia/Singapore', 1.3, 'city'], ['Asia/Kolkata', 22.5, 'town'], ['Asia/Kathmandu', 27.7, 'mountain'],
+  ['Asia/Dubai', 25.2, 'city'], ['Asia/Tehran', 35.7, 'mountain'], ['Asia/Almaty', 43.2, 'mountain'],
+  ['Asia/Ulaanbaatar', 47.9, 'mountain'], ['Europe/Istanbul', 41.0, 'sea'], ['Europe/Athens', 37.9, 'sea'],
+  ['Europe/Rome', 41.9, 'town'], ['Europe/Paris', 48.9, 'city'], ['Europe/London', 51.5, 'city'],
+  ['Europe/Lisbon', 38.7, 'sea'], ['Europe/Oslo', 59.9, 'sea'], ['Atlantic/Reykjavik', 64.1, 'sea'],
+  ['Europe/Zurich', 47.4, 'mountain'], ['Europe/Prague', 50.1, 'town'], ['Europe/Moscow', 55.8, 'city'],
+  ['Africa/Cairo', 30.0, 'town'], ['Africa/Nairobi', -1.3, 'town'], ['Africa/Johannesburg', -26.2, 'city'],
+  ['Africa/Casablanca', 33.6, 'sea'], ['Africa/Lagos', 6.5, 'city'], ['America/New_York', 40.7, 'city'],
+  ['America/Chicago', 41.9, 'city'], ['America/Denver', 39.7, 'mountain'], ['America/Los_Angeles', 34.0, 'sea'],
+  ['America/Vancouver', 49.3, 'mountain'], ['America/Anchorage', 61.2, 'mountain'], ['Pacific/Honolulu', 21.3, 'sea'],
+  ['America/Mexico_City', 19.4, 'city'], ['America/Bogota', 4.7, 'mountain'], ['America/Lima', -12.0, 'sea'],
+  ['America/Sao_Paulo', -23.5, 'city'], ['America/Argentina/Buenos_Aires', -34.6, 'city'],
+  ['America/Santiago', -33.4, 'mountain'], ['America/Halifax', 44.6, 'sea'], ['Atlantic/Azores', 37.7, 'sea'],
+  ['Australia/Sydney', -33.9, 'sea'], ['Australia/Perth', -31.9, 'sea'], ['Pacific/Auckland', -36.8, 'sea'],
+  ['Pacific/Fiji', -18.1, 'sea'],
+].filter(([tz]) => { try { new Intl.DateTimeFormat('en-US', { timeZone: tz }); return true; } catch (e) { return false; } })
+ .map(([tz, lat, type]) => ({ tz, lat, type }));
+
+/* =========================================================
+   時間、太陽、月亮
+   ========================================================= */
+function tzInfo(tz, now = new Date()) {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: tz, hourCycle: 'h23', year: 'numeric', month: 'numeric', day: 'numeric',
+    hour: 'numeric', minute: 'numeric', second: 'numeric'
+  }).formatToParts(now);
+  const g = t => +parts.find(p => p.type === t).value;
+  const y = g('year'), mo = g('month'), d = g('day'), mi = g('minute'), s = g('second');
+  let h = g('hour'); if (h === 24) h = 0;
+  const wall = Date.UTC(y, mo - 1, d, h, mi, s);
+  const offsetMin = Math.round((wall - Math.floor(now.getTime() / 1000) * 1000) / 60000);
+  const doy = Math.floor((Date.UTC(y, mo - 1, d) - Date.UTC(y, 0, 0)) / 864e5);
+  return { y, mo, d, h, mi, offsetMin, doy, hour: h + mi / 60 };
+}
+function declination(doy) { return 23.44 * Math.sin(TAU * (284 + doy) / 365) * Math.PI / 180; }
+function sunElev(lat, doy, hour) {
+  const dec = declination(doy), phi = lat * Math.PI / 180, ha = (hour - 12) * 15 * Math.PI / 180;
+  return Math.asin(Math.sin(phi) * Math.sin(dec) + Math.cos(phi) * Math.cos(dec) * Math.cos(ha)) * 180 / Math.PI;
+}
+function dayBounds(lat, doy) {
+  const dec = declination(doy), phi = lat * Math.PI / 180;
+  const h0 = Math.acos(clamp(-Math.tan(phi) * Math.tan(dec), -1, 1)) * 180 / Math.PI / 15;
+  return [12 - h0, 12 + h0];
+}
+function moonPhase(date) {
+  const syn = 29.530588853, ref = Date.UTC(2000, 0, 6, 18, 14);
+  let p = ((date - ref) / 864e5) / syn;
+  return p - Math.floor(p);
+}
+function season(lat, mo) {
+  if (Math.abs(lat) < 23) return 'tropical';
+  const m = lat < 0 ? ((mo + 5) % 12) + 1 : mo;
+  if (m >= 3 && m <= 5) return 'spring';
+  if (m >= 6 && m <= 8) return 'summer';
+  if (m >= 9 && m <= 11) return 'autumn';
+  return 'winter';
+}
+
+/* =========================================================
+   天空配色：依太陽高度內插（陣列 = [黎明, 黃昏]）
+   ========================================================= */
+const KEYS = [
+  { e: -18, top: '#04060f', mid: '#0a1130', bot: '#171f48', lit: '#2a3462', shade: '#10172f', glow: '#1a2250' },
+  { e: -10, top: '#0a1034', mid: '#262a6a', bot: ['#7a4f88', '#6a3d78'], lit: ['#8a6aa8', '#7c5896'], shade: '#211d4b', glow: ['#c06a8e', '#b24f78'] },
+  { e: -3, top: '#1c2a6a', mid: ['#7a6bb6', '#6e55a6'], bot: ['#ffb68e', '#ff8a58'], lit: ['#ffc8a8', '#ffa06e'], shade: ['#6a5294', '#62418a'], glow: ['#ffd2a2', '#ffa25e'] },
+  { e: 4, top: '#3266b8', mid: ['#a6b8e8', '#e2a4a6'], bot: ['#ffe2b2', '#ffba76'], lit: ['#fff2d8', '#ffd4a2'], shade: ['#9a92c4', '#a684b0'], glow: ['#fff1c8', '#ffd18e'] },
+  { e: 14, top: '#2373dc', mid: '#68b3f0', bot: '#cdeeff', lit: '#ffffff', shade: '#a8bee4', glow: '#ffffff' },
+  { e: 60, top: '#135dd6', mid: '#46a4f0', bot: '#bde8ff', lit: '#ffffff', shade: '#a2bce6', glow: '#ffffff' },
+];
+const WEATHER_TONE = { clear: [0, 1], cloudy: [.22, .96], rain: [.72, .7], snow: [.6, .93], fog: [.45, .92] };
+
+function computeEnv(sc, info) {
+  const { lat } = sc.loc, w = sc.weather;
+  const elev = sunElev(lat, info.doy, info.hour);
+  const dusk = info.hour >= 12;
+  let i = 0;
+  while (i < KEYS.length - 2 && elev > KEYS[i + 1].e) i++;
+  const k0 = KEYS[i], k1 = KEYS[i + 1];
+  const t = smooth(clamp((elev - k0.e) / (k1.e - k0.e), 0, 1));
+  const pick = v => Array.isArray(v) ? v[dusk ? 1 : 0] : v;
+  const P = n => mix(hex(pick(k0[n])), hex(pick(k1[n])), t);
+  const c = { top: P('top'), mid: P('mid'), bot: P('bot'), lit: P('lit'), shade: P('shade'), glow: P('glow') };
+
+  const [oc, dk] = WEATHER_TONE[w];
+  const amb0 = smooth(clamp((elev + 10) / 22, 0, 1));
+  for (const k in c) {
+    const g = lum(c[k]);
+    c[k] = mix(c[k], [g, g, g], oc * .85).map(v => v * dk);
+    if (w === 'snow') c[k] = mix(c[k], [206, 212, 224], .22 * amb0);
+  }
+  const amb = amb0 * (1 - oc * .35);
+  const starVis = (w === 'rain' || w === 'snow') ? 0 : clamp((-elev - 6) / 8, 0, 1) * (1 - oc * .95);
+
+  const [rise, set] = dayBounds(lat, info.doy);
+  const frac = set - rise > .1 ? clamp((info.hour - rise) / (set - rise), -.05, 1.05) : .5;
+  const L = sc.layout;
+  const sunX = lerp(.1, .9, frac);
+  const sunY = clamp(L.horizon - (elev / 55) * L.horizon * .95, .07, L.horizon + .05);
+
+  const phase = moonPhase(Date.now());
+  const illum = (1 - Math.cos(TAU * phase)) / 2;
+  let moonVis = elev < 2 && illum > .04 ? clamp((2 - elev) / 8, 0, 1) : 0;
+  if (w === 'rain' || w === 'snow') moonVis = 0;
+  else if (w === 'fog') moonVis *= .3;
+  else if (w === 'cloudy') moonVis *= .8;
+
+  const nearC = mix(c.mid, [8, 10, 20], .74 + (1 - amb) * .18);
+  return { ...c, elev, dusk, amb, oc, starVis, sunX, sunY, nearC, moon: { phase, illum, vis: moonVis } };
+}
+
+/* =========================================================
+   場景生成
+   ========================================================= */
+function pickLocation(exclude) {
+  const now = new Date(), userOff = -now.getTimezoneOffset();
+  const cands = LOCATIONS.filter(l => l.tz !== exclude).map(l => {
+    const d = Math.abs(tzInfo(l.tz, now).offsetMin - userOff) / 60;
+    return { l, w: 1 + Math.pow(d, 1.4) };          // 時差越大越容易被抽中
+  });
+  let s = cands.reduce((a, c) => a + c.w, 0) * Math.random();
+  for (const c of cands) if ((s -= c.w) <= 0) return c.l;
+  return cands[cands.length - 1].l;
+}
+function pickWeather(lat, mo) {
+  const a = Math.abs(lat), s = season(lat, mo);
+  let t;
+  if (s === 'tropical') t = { clear: .38, cloudy: .34, rain: .25, fog: .03 };
+  else if (s === 'winter') t = a >= 40 ? { clear: .3, cloudy: .28, snow: .3, rain: .06, fog: .06 }
+    : a >= 30 ? { clear: .36, cloudy: .34, rain: .16, snow: .07, fog: .07 }
+    : { clear: .45, cloudy: .3, rain: .2, fog: .05 };
+  else if (s === 'summer') t = { clear: .5, cloudy: .28, rain: .2, fog: .02 };
+  else t = a >= 55 ? { clear: .36, cloudy: .32, rain: .18, snow: .07, fog: .07 } : { clear: .42, cloudy: .32, rain: .19, fog: .07 };
+  let r = Math.random();
+  for (const k in t) if ((r -= t[k]) <= 0) return k;
+  return 'clear';
+}
+
+function makePuffs(r, flat) {
+  const p = [];
+  const nb = 5 + Math.floor(r() * 4);
+  for (let i = 0; i < nb; i++) {
+    p.push({ x: .16 + .68 * (i / (nb - 1)) + (r() - .5) * .05, y: .42 + r() * .04, r: .08 + r() * .06 });
+  }
+  const nt = flat ? 3 : 2 + Math.floor(r() * 4);
+  for (let i = 0; i < nt; i++) {
+    p.push(flat
+      ? { x: .3 + r() * .4, y: .34 + r() * .04, r: .08 + r() * .04 }
+      : { x: .28 + r() * .44, y: .24 + r() * .1, r: .1 + r() * .08 });
+  }
+  return p.sort((a, b) => a.y - b.y);
+}
+
+function makeLayout(sc) {
+  const r = mulberry32(sc.seed);
+  const type = sc.loc.type, w = sc.weather;
+  const L = { horizon: { city: .72, sea: .64, mountain: .70, town: .74 }[type] };
+
+  L.stars = Array.from({ length: 170 }, () => ({ x: r(), y: r() * .7, s: r() ** 3 * 1.7 + .4, ph: r() * TAU, sp: .6 + r() * 2.2 }));
+  L.moon = { x: .22 + r() * .56, y: .12 + r() * .14 };
+  L.rays = Array.from({ length: 9 }, () => ({ a: r() * TAU, w: .02 + r() * .05 }));
+
+  const overcast = w === 'rain' || w === 'snow';
+  const nC = { clear: 3 + Math.floor(r() * 3), cloudy: 9 + Math.floor(r() * 4), rain: 13 + Math.floor(r() * 4), snow: 12 + Math.floor(r() * 3), fog: 4 + Math.floor(r() * 2) }[w];
+  L.clouds = Array.from({ length: nC }, () => {
+    const y = overcast ? r() * .34 : .05 + r() * (L.horizon - .3);
+    const flat = overcast || r() < .3;
+    return {
+      x: r() * 1.3 - .2, y,
+      w: overcast ? .3 + r() * .25 : (.15 + r() * .17) * (1 + y * 1.3),
+      speed: .003 + r() * .007,
+      puffs: makePuffs(r, flat),
+      alpha: w === 'fog' ? .55 : .96,
+    };
+  }).sort((a, b) => a.y - b.y);
+
+  // ---- 遠景 ----
+  if (type === 'city') {
+    L.farB = []; let x = -.02;
+    while (x < 1.02) { const bw = .025 + r() * .05; L.farB.push({ x, w: bw, h: .05 + r() * .14 }); x += bw * (.85 + r() * .2); }
+    L.nearB = []; x = -.03; let tallest = null;
+    while (x < 1.03) {
+      const bw = .045 + r() * .08, bh = .04 + r() * .22;
+      const cols = Math.max(2, Math.round(bw / .012)), rows = Math.max(2, Math.round(bh / .022));
+      const win = [];
+      for (let i = 0; i < rows; i++) for (let j = 0; j < cols; j++) if (r() < .34) win.push([j, i, r() < .15]);
+      const b = { x, w: bw, h: bh, cols, rows, win, ant: r() < .25 };
+      L.nearB.push(b);
+      if (!tallest || bh > tallest.h) tallest = b;
+      x += bw * (.9 + r() * .25);
+    }
+    tallest.ant = true;
+    L.beacon = { x: tallest.x + tallest.w / 2, y: L.horizon - tallest.h - .045 };
+  } else if (type === 'mountain') {
+    L.ridges = [.5, .58, .66].map(base => ({
+      base, terms: Array.from({ length: 4 }, (_, i) => ({ a: (.05 + r() * .05) / (i + 1), f: (i + 1) * (1 + r() * 1.5), p: r() * TAU }))
+    }));
+    L.pines = []; let x = -.02;
+    while (x < 1.04) { L.pines.push({ x, h: .09 + r() * .1, w: .03 + r() * .025 }); x += .02 + r() * .035; }
+  } else if (type === 'sea') {
+    L.island = r() < .65 ? { x: .15 + r() * .6, w: .08 + r() * .14, h: .012 + r() * .02 } : null;
+    L.lighthouse = r() < .75;
+    L.lhRight = r() < .5;
+  } else if (type === 'town') {
+    L.hills = [.62, .7].map(base => ({
+      base, terms: Array.from({ length: 3 }, (_, i) => ({ a: (.025 + r() * .03) / (i + 1), f: (i + 1) * (.6 + r()), p: r() * TAU }))
+    }));
+    L.houses = [];
+    const n = 8 + Math.floor(r() * 7);
+    for (let i = 0; i < n; i++) L.houses.push({ x: r(), w: .025 + r() * .025, h: .022 + r() * .02, lit: r() < .6 });
+  }
+
+  // ---- 近景 ----
+  L.poleRight = r() < .5;
+  L.hasPole = type === 'city' || type === 'town';
+  if (L.hasPole) {
+    L.poleX = L.poleRight ? .86 + r() * .05 : .09 + r() * .05;
+    L.wires = Array.from({ length: 3 + Math.floor(r() * 2) }, (_, i) => ({
+      y0: .2 + i * .045 + r() * .01, y1: .1 + r() * .35, sag: .05 + r() * .09
+    }));
+    L.birds = r() < .6 ? Array.from({ length: 1 + Math.floor(r() * 3) }, () => ({ wire: Math.floor(r() * 3), t: .25 + r() * .5 })) : [];
+  }
+  if (type === 'city' || type === 'town') {
+    L.roofs = []; let x = -.04;
+    while (x < 1.04) {
+      const rw = .1 + r() * .12;
+      L.roofs.push({ x, w: rw, y: .86 + r() * .07, pitched: r() < .55, tank: r() < .2 });
+      x += rw;
+    }
+  }
+  // 樹枝（從沒有電線桿的那一側伸進來）
+  const left = L.hasPole ? L.poleRight : r() < .5;
+  const x0 = left ? -.01 : 1.01, dir = left ? 1 : -1;
+  const y0 = .02 + r() * .08;
+  const main = { a: [x0, y0], c: [x0 + dir * (.12 + r() * .05), y0 + .12 + r() * .05], b: [x0 + dir * (.28 + r() * .08), y0 + .06 + r() * .06] };
+  const subs = [.35, .6, .85].map(t => {
+    const p = qpt(main, t), up = r() < .5 ? -1 : 1;
+    const e = [p[0] + dir * (.05 + r() * .08), p[1] + up * (.04 + r() * .06)];
+    return { a: p, c: [lerp(p[0], e[0], .5), p[1] + up * .01], b: e };
+  });
+  L.branch = { main, subs, clusters: [] };
+  const ends = [main.b, ...subs.map(s => s.b), qpt(main, .5), qpt(main, .78)];
+  for (const e of ends) {
+    const dots = Array.from({ length: 14 + Math.floor(r() * 10) }, () => {
+      const a = r() * TAU, d = Math.sqrt(r());
+      return [Math.cos(a) * d, Math.sin(a) * d * .75, .18 + r() * .22, r()];
+    });
+    L.branch.clusters.push({ x: e[0], y: e[1], r: .028 + r() * .025, dots });
+  }
+
+  L.fog = Array.from({ length: 6 }, () => ({ y: L.horizon - .2 + r() * .35, s: .006 + r() * .01, ph: r() * 1.6, w: .5 + r() * .5 }));
+  return L;
+}
+function qpt(q, t) {
+  const u = 1 - t;
+  return [u * u * q.a[0] + 2 * u * t * q.c[0] + t * t * q.b[0], u * u * q.a[1] + 2 * u * t * q.c[1] + t * t * q.b[1]];
+}
+
+/* =========================================================
+   畫布狀態
+   ========================================================= */
+const view = $('#view'), skyC = $('#sky'), glassC = $('#glass');
+const sctx = skyC.getContext('2d'), gctx = glassC.getContext('2d');
+let W = 0, H = 0, DPR = 1, U = 1, BAR = 10;
+let scene = null, env = null, T = 0;
+const layers = {};
+let particles = [], drops = [], sliders = [], ghosts = [], shooting = null, glassDirty = true;
+
+function resize() {
+  const rect = view.getBoundingClientRect();
+  DPR = Math.min(2, window.devicePixelRatio || 1);
+  W = Math.max(2, Math.round(rect.width * DPR));
+  H = Math.max(2, Math.round(rect.height * DPR));
+  U = Math.sqrt(W * H);
+  for (const c of [skyC, glassC]) { c.width = W; c.height = H; }
+  BAR = clamp(Math.round(rect.width * .014), 6, 13);
+  $('.bar.v').style.width = BAR + 'px';
+  $('.bar.h').style.height = BAR + 'px';
+  $('.bar.h').style.top = (H_BAR * 100) + '%';
+  for (const k of ['back', 'far', 'near']) layers[k] = mkCanvas(W, H);
+  if (scene) { initParticles(); paintStatic(); }
+}
+
+function initParticles() {
+  particles = []; drops = []; sliders = []; ghosts = [];
+  const w = scene.weather;
+  if (w === 'rain') {
+    const n = scene.heavy ? 320 : 190;
+    for (let i = 0; i < n; i++) particles.push({ x: Math.random(), y: Math.random(), len: .03 + Math.random() * .05, spd: .9 + Math.random() * .7 });
+    const nd = Math.round((W * H) / (5200 * DPR * DPR)) * (scene.heavy ? 1.4 : 1);
+    for (let i = 0; i < nd; i++) drops.push(newDrop());
+  } else if (w === 'snow') {
+    for (let i = 0; i < 200; i++) particles.push({ x: Math.random(), y: Math.random(), z: Math.random(), ph: Math.random() * TAU });
+  }
+}
+function newDrop() {
+  return { x: Math.random() * W, y: Math.random() * H, r: (.8 + Math.random() ** 2 * 2.6) * DPR };
+}
+
+/* =========================================================
+   靜態圖層繪製
+   ========================================================= */
+function paintStatic() {
+  if (!scene || !env || !W) return;
+  paintBack(); paintFar(); paintNear(); paintClouds(); paintMoon();
+  glassDirty = true;
+}
+
+function paintBack() {
+  const g = layers.back.getContext('2d'), e = env, L = scene.layout;
+  const hz = L.horizon * H;
+  g.clearRect(0, 0, W, H);
+  const lg = g.createLinearGradient(0, 0, 0, hz);
+  lg.addColorStop(0, rgba(e.top)); lg.addColorStop(.55, rgba(e.mid)); lg.addColorStop(1, rgba(e.bot));
+  g.fillStyle = lg; g.fillRect(0, 0, W, hz + 2);
+  g.fillStyle = rgba(e.bot); g.fillRect(0, hz, W, H - hz);
+
+  // 地平線的晨昏光
+  if (e.elev > -12 && e.elev < 10) {
+    const s = clamp(1 - Math.abs(e.elev + 1) / 11, 0, 1) * (1 - e.oc * .7);
+    g.save(); g.translate(e.sunX * W, hz); g.scale(1, .35);
+    const rg = g.createRadialGradient(0, 0, 0, 0, 0, W * .7);
+    rg.addColorStop(0, rgba(e.glow, .6 * s)); rg.addColorStop(1, rgba(e.glow, 0));
+    g.fillStyle = rg; g.fillRect(-W * 2, -H * 4, W * 4, H * 8); g.restore();
+  }
+  // 太陽
+  if (e.elev > -1.5) {
+    const sx = e.sunX * W, sy = e.sunY * H;
+    const halo = g.createRadialGradient(sx, sy, 0, sx, sy, U * .38);
+    halo.addColorStop(0, rgba(e.glow, .6 * (1 - e.oc * .6))); halo.addColorStop(1, rgba(e.glow, 0));
+    g.fillStyle = halo; g.fillRect(0, 0, W, H);
+    if (e.oc < .5) {
+      g.fillStyle = rgba(mix(e.glow, [255, 255, 255], .7), .95);
+      g.beginPath(); g.arc(sx, sy, U * .028, 0, TAU); g.fill();
+    }
+  }
+  // 陰天的雲層
+  if (e.oc > .5) {
+    const dg = g.createLinearGradient(0, 0, 0, H * .5);
+    dg.addColorStop(0, rgba(mix(e.shade, e.top, .5), .6)); dg.addColorStop(1, rgba(e.shade, 0));
+    g.fillStyle = dg; g.fillRect(0, 0, W, H * .5);
+  }
+}
+
+function ridgeY(rd, x) {
+  let y = rd.base;
+  for (const t of rd.terms) y -= t.a * (.5 + .5 * Math.sin(t.f * x * TAU + t.p));
+  return y;
+}
+function fillRidge(g, rd, color) {
+  g.fillStyle = color; g.beginPath(); g.moveTo(0, H);
+  const step = 3 * DPR;
+  for (let x = 0; x <= W + step; x += step) g.lineTo(x, ridgeY(rd, x / W) * H);
+  g.lineTo(W, H); g.closePath(); g.fill();
+}
+
+function paintFar() {
+  const g = layers.far.getContext('2d'), e = env, L = scene.layout, type = scene.loc.type;
+  g.clearRect(0, 0, W, H);
+  const hz = L.horizon * H;
+  const night = clamp((.6 - e.amb) / .5, 0, 1);
+  const far1 = mix(mix(e.bot, e.top, .35), [18, 22, 44], .15 + (1 - e.amb) * .45);
+  const far2 = mix(far1, [14, 16, 30], .3 + (1 - e.amb) * .2);
+  const haze = (y0, y1, a) => {
+    const lg = g.createLinearGradient(0, y0, 0, y1);
+    lg.addColorStop(0, rgba(e.bot, 0)); lg.addColorStop(1, rgba(e.bot, a));
+    g.fillStyle = lg; g.fillRect(0, y0, W, y1 - y0);
+  };
+
+  if (type === 'city') {
+    g.fillStyle = rgba(far1);
+    for (const b of L.farB) g.fillRect(b.x * W, hz - b.h * H, b.w * W + 1, H);
+    haze(hz - .16 * H, hz + .02 * H, .35);
+    for (const b of L.nearB) {
+      const bx = b.x * W, by = hz - b.h * H, bw = b.w * W + 1, bh = b.h * H;
+      g.fillStyle = rgba(far2); g.fillRect(bx, by, bw, H);
+      g.fillStyle = rgba(e.lit, .12 * e.amb); g.fillRect(bx, by, bw, 1.5 * DPR);   // 頂端反光
+      if (b.ant) {
+        g.strokeStyle = rgba(far2); g.lineWidth = 1.5 * DPR;
+        g.beginPath(); g.moveTo(bx + bw / 2, by); g.lineTo(bx + bw / 2, by - .045 * H); g.stroke();
+      }
+      const cw = bw / b.cols, ch = bh / b.rows;
+      for (const [j, i, blue] of b.win) {
+        if (night > 0) g.fillStyle = blue ? `rgba(190,225,255,${.75 * night})` : `rgba(255,214,130,${.85 * night})`;
+        else g.fillStyle = rgba(e.lit, .08);
+        g.fillRect(bx + j * cw + cw * .28, by + i * ch + ch * .3, cw * .44, ch * .4);
+      }
+    }
+    haze(hz - .04 * H, H, .15);
+  } else if (type === 'mountain') {
+    const c0 = mix(mix(e.bot, e.mid, .4), [30, 36, 70], .12 + (1 - e.amb) * .4);
+    const cols = [c0, mix(c0, [16, 20, 40], .32), mix(c0, [12, 14, 28], .55)];
+    L.ridges.forEach((rd, i) => {
+      fillRidge(g, rd, rgba(cols[i]));
+      if (i === 0 && (Math.abs(scene.loc.lat) > 38 || scene.weather === 'snow')) {
+        // 遠山的雪頂
+        const capY = rd.base - rd.terms.reduce((a, t) => a + t.a, 0) * .55;
+        g.save(); g.beginPath(); g.moveTo(0, H);
+        for (let x = 0; x <= W + 3 * DPR; x += 3 * DPR) g.lineTo(x, ridgeY(rd, x / W) * H);
+        g.lineTo(W, H); g.closePath(); g.clip();
+        g.fillStyle = rgba(mix(c0, [240, 244, 250], .45 * (.3 + e.amb * .7)));
+        g.fillRect(0, 0, W, capY * H); g.restore();
+      }
+      if (i < 2) haze((rd.base - .02) * H, (rd.base + .1) * H, .4);
+    });
+  } else if (type === 'sea') {
+    const sg = g.createLinearGradient(0, hz, 0, H);
+    sg.addColorStop(0, rgba(mix(e.bot, e.mid, .3))); sg.addColorStop(1, rgba(mix(e.top, [5, 10, 30], .35)));
+    g.fillStyle = sg; g.fillRect(0, hz, W, H - hz);
+    g.fillStyle = rgba(mix(e.bot, [255, 255, 255], .3), .5); g.fillRect(0, hz - DPR * .5, W, DPR);
+    if (L.island) {
+      const ix = L.island.x * W, iw = L.island.w * W, ih = L.island.h * H;
+      g.fillStyle = rgba(far1); g.beginPath(); g.moveTo(ix, hz);
+      g.quadraticCurveTo(ix + iw * .35, hz - ih * 2, ix + iw * .55, hz - ih);
+      g.quadraticCurveTo(ix + iw * .8, hz - ih * .6, ix + iw, hz); g.fill();
+    }
+    if (L.lighthouse) {
+      const R = L.lhRight, ex = R ? W : 0, s = R ? -1 : 1;
+      g.fillStyle = rgba(far2); g.beginPath();
+      g.moveTo(ex, hz - .07 * H);
+      g.quadraticCurveTo(ex + s * .1 * W, hz - .08 * H, ex + s * .2 * W, hz + .015 * H);
+      g.lineTo(ex + s * .3 * W, H); g.lineTo(ex, H); g.closePath(); g.fill();
+      const lx = ex + s * .08 * W, ly = hz - .075 * H, tw = .012 * W, th = .075 * H;
+      g.fillStyle = rgba(mix(far2, [235, 232, 225], .25 + e.amb * .45));
+      g.beginPath(); g.moveTo(lx - tw * .6, ly); g.lineTo(lx + tw * .6, ly); g.lineTo(lx + tw * .4, ly - th); g.lineTo(lx - tw * .4, ly - th); g.fill();
+      g.fillStyle = rgba(mix(far2, [180, 60, 50], .5 * (.3 + e.amb)));
+      g.fillRect(lx - tw * .5, ly - th - tw * .9, tw, tw * .9);
+      L.lamp = { x: lx / W, y: (ly - th - tw * .45) / H };
+    }
+  } else if (type === 'town') {
+    const season_ = season(scene.loc.lat, scene.info.mo);
+    const tint = { spring: [110, 160, 100], summer: [70, 130, 80], autumn: [170, 120, 70], winter: [150, 150, 140], tropical: [70, 140, 80] }[season_];
+    const tintS = scene.weather === 'snow' ? [225, 230, 238] : tint;
+    const h1 = mix(mix(far1, tintS, .22 * e.amb), [20, 24, 40], .1);
+    const h2 = mix(mix(far2, tintS, .3 * e.amb), [12, 14, 26], .15);
+    fillRidge(g, L.hills[0], rgba(h1));
+    haze((L.hills[0].base - .02) * H, (L.hills[0].base + .08) * H, .3);
+    fillRidge(g, L.hills[1], rgba(h2));
+    for (const hs of L.houses) {
+      const x = hs.x * W, w = hs.w * W, h = hs.h * H;
+      const base = ridgeY(L.hills[1], hs.x) * H + h * .5;
+      g.fillStyle = rgba(mix(h2, [236, 226, 206], .12 + .3 * e.amb));
+      g.fillRect(x - w / 2, base - h, w, h);
+      g.fillStyle = rgba(mix([130, 64, 52], h2, .45 + (1 - e.amb) * .45));
+      g.beginPath(); g.moveTo(x - w * .62, base - h); g.lineTo(x, base - h - h * .7); g.lineTo(x + w * .62, base - h); g.fill();
+      if (hs.lit && night > 0) {
+        g.fillStyle = `rgba(255,210,128,${.9 * night})`;
+        g.fillRect(x - w * .15, base - h * .7, w * .3, h * .35);
+      }
+    }
+  }
+
+  // 霧的靜態薄紗
+  if (scene.weather === 'fog') {
+    const fc = mix([40, 46, 66], [225, 230, 238], e.amb);
+    const lg = g.createLinearGradient(0, hz - .35 * H, 0, H);
+    lg.addColorStop(0, rgba(fc, 0)); lg.addColorStop(.5, rgba(fc, .5)); lg.addColorStop(1, rgba(fc, .35));
+    g.fillStyle = lg; g.fillRect(0, hz - .35 * H, W, H);
+  }
+}
+
+function paintNear() {
+  const g = layers.near.getContext('2d'), e = env, L = scene.layout, type = scene.loc.type;
+  g.clearRect(0, 0, W, H);
+  const nc = rgba(e.nearC);
+  const rim = rgba(e.lit, .28 * e.amb);
+  g.lineCap = 'round'; g.lineJoin = 'round';
+
+  // 屋頂
+  if (L.roofs) {
+    for (const rf of L.roofs) {
+      const x = rf.x * W, w = rf.w * W + 1, y = rf.y * H;
+      g.fillStyle = nc;
+      if (rf.pitched) {
+        g.beginPath(); g.moveTo(x - w * .04, y + .03 * H); g.lineTo(x + w * .5, y - .025 * H); g.lineTo(x + w * 1.04, y + .03 * H); g.lineTo(x + w * 1.04, H); g.lineTo(x - w * .04, H); g.fill();
+        g.strokeStyle = rim; g.lineWidth = 1.2 * DPR;
+        g.beginPath(); g.moveTo(x - w * .04, y + .03 * H); g.lineTo(x + w * .5, y - .025 * H); g.lineTo(x + w * 1.04, y + .03 * H); g.stroke();
+      } else {
+        g.fillRect(x, y, w, H - y);
+        g.fillRect(x, y - .008 * H, w, .008 * H);
+        g.fillStyle = rim; g.fillRect(x, y - .008 * H, w, 1.2 * DPR);
+        if (rf.tank) {
+          g.fillStyle = nc;
+          const tx = x + w * .6, tw = .03 * W, th = .035 * H;
+          g.fillRect(tx, y - .02 * H - th, tw, th);
+          g.fillRect(tx + tw * .1, y - .02 * H, DPR * 1.5, .02 * H); g.fillRect(tx + tw * .85, y - .02 * H, DPR * 1.5, .02 * H);
+        }
+      }
+    }
+  }
+  // 松樹（山景）
+  if (L.pines) {
+    g.fillStyle = nc;
+    for (const p of L.pines) {
+      const x = p.x * W, base = H * 1.02, h = p.h * H, w = p.w * W;
+      for (let k = 0; k < 3; k++) {
+        const ty = base - h + k * h * .28, bw = w * (.55 + k * .25);
+        g.beginPath(); g.moveTo(x, ty); g.lineTo(x + bw / 2, ty + h * .42); g.lineTo(x - bw / 2, ty + h * .42); g.fill();
+      }
+      g.fillRect(x - DPR, base - h * .2, 2 * DPR, h * .2);
+    }
+  }
+  // 海邊欄杆
+  if (type === 'sea') {
+    g.fillStyle = nc;
+    const ry = .9 * H;
+    g.fillRect(0, ry, W, .012 * H);
+    g.fillRect(0, ry + .045 * H, W, .008 * H);
+    for (let x = .03; x < 1; x += .09) g.fillRect(x * W, ry, .008 * W, H - ry);
+    g.fillStyle = rim; g.fillRect(0, ry, W, 1.2 * DPR);
+  }
+  // 電線桿與電線
+  if (L.hasPole) {
+    const px = L.poleX * W, pw = Math.max(4 * DPR, .016 * W);
+    const side = L.poleRight ? -1 : 1;
+    g.strokeStyle = nc; g.lineWidth = 1.3 * DPR;
+    for (const wr of L.wires) {
+      const sx = px, sy = wr.y0 * H, ex = (L.poleRight ? -.1 : 1.1) * W, ey = wr.y1 * H;
+      wr.q = { a: [sx, sy], c: [(sx + ex) / 2, Math.max(sy, ey) + wr.sag * H], b: [ex, ey] };
+      g.beginPath(); g.moveTo(sx, sy); g.quadraticCurveTo(wr.q.c[0], wr.q.c[1], ex, ey); g.stroke();
+      // 往另一側延伸的一小段
+      g.beginPath(); g.moveTo(sx, sy); g.quadraticCurveTo(sx - side * .06 * W, sy + .03 * H, sx - side * .14 * W, sy + .01 * H); g.stroke();
+    }
+    g.fillStyle = nc;
+    g.fillRect(px - pw / 2, -.02 * H, pw, H * 1.05);
+    g.fillRect(px - .07 * W, .19 * H, .14 * W, .012 * H);
+    g.fillRect(px - .05 * W, .3 * H, .1 * W, .01 * H);
+    for (const ix of [-.06, -.02, .02, .06]) g.fillRect(px + ix * W - 2 * DPR, .175 * H, 4 * DPR, .016 * H);
+    g.fillStyle = rim; g.fillRect(px + (L.poleRight ? -pw / 2 : pw / 2 - 1.2 * DPR), 0, 1.2 * DPR, H);
+    // 停在電線上的鳥
+    if (L.birds && e.amb > .3 && (scene.weather === 'clear' || scene.weather === 'cloudy')) {
+      g.fillStyle = nc;
+      for (const b of L.birds) {
+        const wr = L.wires[b.wire % L.wires.length]; if (!wr.q) continue;
+        const [bx, by] = qpt(wr.q, b.t), s = 3.4 * DPR;
+        g.beginPath(); g.ellipse(bx, by - s * 1.2, s * 1.3, s, 0, 0, TAU); g.fill();
+        g.beginPath(); g.arc(bx + s * 1.1, by - s * 2, s * .7, 0, TAU); g.fill();
+        g.beginPath(); g.moveTo(bx - s, by - s); g.lineTo(bx - s * 2.6, by - s * .2); g.lineTo(bx - s * 1.2, by - s * .4); g.fill();
+      }
+    }
+  }
+  // 樹枝
+  paintBranch(g, nc);
+}
+
+function paintBranch(g, nc) {
+  const e = env, B = scene.layout.branch;
+  const P = p => [p[0] * W, p[1] * H];
+  const stroke = (q, w) => {
+    const a = P(q.a), c = P(q.c), b = P(q.b);
+    g.lineWidth = w; g.beginPath(); g.moveTo(...a); g.quadraticCurveTo(...c, ...b); g.stroke();
+  };
+  g.strokeStyle = nc;
+  stroke(B.main, U * .011);
+  for (const s of B.subs) stroke(s, U * .005);
+
+  const sea_ = season(scene.loc.lat, scene.info.mo);
+  if (sea_ === 'winter') {
+    if (scene.weather === 'snow') {
+      g.strokeStyle = 'rgba(240,244,250,.85)';
+      const lift = q => ({ a: [q.a[0], q.a[1] - .004], c: [q.c[0], q.c[1] - .004], b: [q.b[0], q.b[1] - .004] });
+      stroke(lift(B.main), U * .005); for (const s of B.subs) stroke(lift(s), U * .0025);
+    }
+    return;
+  }
+  const pal = {
+    spring: ['#ffc4d8', '#ffdbe7', '#f7a8c4', '#fff0f4'],
+    summer: ['#3e8f4e', '#5aa860', '#2f7442', '#79c06c'],
+    autumn: ['#e2782e', '#c9452e', '#f0aa3c', '#b9542a'],
+    tropical: ['#3a9150', '#58b062', '#2c7a44', '#80c86e'],
+  }[sea_].map(hex);
+  const dim = .3 + (1 - e.amb) * .6;
+  for (const cl of B.clusters) {
+    const cx = cl.x * W, cy = cl.y * H, R = cl.r * U;
+    for (const [dx, dy, rr, k] of cl.dots) {
+      const col = mix(pal[Math.floor(k * pal.length)], e.nearC, dim);
+      const hi = dy < 0 ? mix(col, e.lit, .15 * e.amb) : col;
+      g.fillStyle = rgba(hi);
+      g.beginPath(); g.arc(cx + dx * R, cy + dy * R, rr * R, 0, TAU); g.fill();
+    }
+  }
+}
+
+function paintClouds() {
+  const e = env, L = scene.layout;
+  let lit = e.lit, shade = e.shade;
+  if (scene.weather === 'rain') {
+    lit = mix(lit, mix([34, 38, 52], [120, 125, 135], e.amb), .4);
+    shade = mix(shade, mix([16, 18, 28], [60, 64, 74], e.amb), .4);
+  }
+  for (const cl of L.clouds) {
+    const cw = Math.max(40, cl.w * U), ch = cw * .62, clipH = cw * .53;
+    const c = mkCanvas(cw, ch), g = c.getContext('2d');
+    g.save(); g.beginPath(); g.rect(0, 0, cw, clipH); g.clip();
+    for (const p of cl.puffs) {
+      const x = p.x * cw, y = p.y * cw, rr = p.r * cw;
+      const gr = g.createRadialGradient(x - rr * .35, y - rr * .45, rr * .1, x, y, rr * 1.05);
+      gr.addColorStop(0, rgba(lit)); gr.addColorStop(.6, rgba(mix(lit, shade, .25))); gr.addColorStop(1, rgba(shade));
+      g.fillStyle = gr; g.beginPath(); g.arc(x, y, rr, 0, TAU); g.fill();
+    }
+    g.globalCompositeOperation = 'source-atop';
+    const lg = g.createLinearGradient(0, 0, 0, clipH);
+    lg.addColorStop(0, rgba(shade, 0)); lg.addColorStop(.6, rgba(shade, 0)); lg.addColorStop(1, rgba(shade, .55));
+    g.fillStyle = lg; g.fillRect(0, 0, cw, ch);
+    g.restore();
+    cl.sprite = c;
+  }
+}
+
+function paintMoon() {
+  const m = env.moon, R = Math.max(6, U * .026), S = Math.ceil(R * 10), cx = S / 2;
+  const c = mkCanvas(S, S), g = c.getContext('2d');
+  const hal = g.createRadialGradient(cx, cx, R * .8, cx, cx, R * 5);
+  hal.addColorStop(0, `rgba(255,244,214,${.12 + .22 * m.illum})`); hal.addColorStop(1, 'rgba(255,244,214,0)');
+  g.fillStyle = hal; g.fillRect(0, 0, S, S);
+  g.fillStyle = 'rgba(190,200,235,.12)'; g.beginPath(); g.arc(cx, cx, R, 0, TAU); g.fill();
+  const k = Math.cos(TAU * m.phase), sgn = m.phase < .5 ? 1 : -1;
+  g.beginPath();
+  for (let i = 0; i <= 48; i++) { const a = -Math.PI / 2 + Math.PI * i / 48; g.lineTo(cx + sgn * R * Math.cos(a), cx + R * Math.sin(a)); }
+  for (let i = 48; i >= 0; i--) { const a = -Math.PI / 2 + Math.PI * i / 48; g.lineTo(cx + sgn * k * R * Math.cos(a), cx + R * Math.sin(a)); }
+  g.closePath(); g.fillStyle = '#fff3d2'; g.fill();
+  layers.moon = c;
+}
+
+/* =========================================================
+   每一幀
+   ========================================================= */
+function drawSky(dt) {
+  const g = sctx, e = env, L = scene.layout, type = scene.loc.type;
+  const hz = L.horizon * H;
+  g.drawImage(layers.back, 0, 0);
+
+  // 星星
+  if (e.starVis > .01) {
+    for (const s of L.stars) {
+      if (s.y * H > hz) continue;
+      const a = e.starVis * (.55 + .45 * Math.sin(T * s.sp + s.ph));
+      const x = s.x * W, y = s.y * H, rr = s.s * DPR;
+      g.fillStyle = `rgba(255,250,235,${a})`;
+      g.beginPath(); g.arc(x, y, rr, 0, TAU); g.fill();
+      if (s.s > 1.5) {
+        g.strokeStyle = `rgba(255,250,235,${a * .5})`; g.lineWidth = .8 * DPR;
+        g.beginPath(); g.moveTo(x - rr * 4, y); g.lineTo(x + rr * 4, y); g.moveTo(x, y - rr * 4); g.lineTo(x, y + rr * 4); g.stroke();
+      }
+    }
+    // 流星
+    if (!shooting && e.starVis > .5 && Math.random() < dt / 14) {
+      shooting = { x: .15 + Math.random() * .7, y: .05 + Math.random() * .25, vx: (Math.random() < .5 ? -1 : 1) * (.5 + Math.random() * .3), vy: .22 + Math.random() * .15, life: 0 };
+    }
+    if (shooting) {
+      const s = shooting; s.life += dt; s.x += s.vx * dt * .6; s.y += s.vy * dt * .6;
+      const a = Math.sin(clamp(s.life / .9, 0, 1) * Math.PI) * e.starVis;
+      const x = s.x * W, y = s.y * H, tx = x - s.vx * .12 * W, ty = y - s.vy * .12 * W;
+      const lg = g.createLinearGradient(x, y, tx, ty);
+      lg.addColorStop(0, `rgba(255,255,240,${a})`); lg.addColorStop(1, 'rgba(255,255,240,0)');
+      g.strokeStyle = lg; g.lineWidth = 1.4 * DPR; g.beginPath(); g.moveTo(x, y); g.lineTo(tx, ty); g.stroke();
+      if (s.life > .9) shooting = null;
+    }
+  }
+  // 月亮
+  if (e.moon.vis > 0 && layers.moon) {
+    const S = layers.moon.width;
+    g.globalAlpha = e.moon.vis;
+    g.drawImage(layers.moon, L.moon.x * W - S / 2, L.moon.y * H - S / 2);
+    g.globalAlpha = 1;
+  }
+  // 光束
+  if ((scene.weather === 'clear' || scene.weather === 'cloudy') && e.elev > -1 && e.elev < 16) {
+    const s = clamp(1 - Math.abs(e.elev - 5) / 11, 0, 1);
+    const sx = e.sunX * W, sy = e.sunY * H, len = U * 1.4;
+    g.save(); g.globalCompositeOperation = 'lighter';
+    const rg = g.createRadialGradient(sx, sy, 0, sx, sy, len);
+    rg.addColorStop(0, rgba(e.glow, .09 * s)); rg.addColorStop(1, rgba(e.glow, 0));
+    g.fillStyle = rg;
+    for (let i = 0; i < L.rays.length; i++) {
+      const ry = L.rays[i], a = ry.a + Math.sin(T * .05 + i) * .04;
+      g.beginPath(); g.moveTo(sx, sy);
+      g.lineTo(sx + Math.cos(a - ry.w) * len, sy + Math.sin(a - ry.w) * len);
+      g.lineTo(sx + Math.cos(a + ry.w) * len, sy + Math.sin(a + ry.w) * len);
+      g.closePath(); g.fill();
+    }
+    g.restore();
+  }
+  // 雲
+  for (const cl of L.clouds) {
+    if (!cl.sprite) continue;
+    cl.x += cl.speed * dt;
+    if (cl.x * W > W + 10) cl.x = -cl.sprite.width / W - .02;
+    g.globalAlpha = cl.alpha;
+    g.drawImage(cl.sprite, cl.x * W, cl.y * H);
+  }
+  g.globalAlpha = 1;
+
+  g.drawImage(layers.far, 0, 0);
+
+  // 遠景的動態細節
+  const night = clamp((.6 - e.amb) / .5, 0, 1);
+  if (type === 'city' && L.beacon && Math.sin(T * 3) > .2) {
+    const bx = L.beacon.x * W, by = L.beacon.y * H;
+    const rg = g.createRadialGradient(bx, by, 0, bx, by, 8 * DPR);
+    rg.addColorStop(0, `rgba(255,70,60,${.5 + .5 * night})`); rg.addColorStop(1, 'rgba(255,70,60,0)');
+    g.fillStyle = rg; g.fillRect(bx - 10 * DPR, by - 10 * DPR, 20 * DPR, 20 * DPR);
+  }
+  if (type === 'sea') {
+    const src = e.elev > -2 && e.oc < .6 ? { x: e.sunX, c: mix(e.glow, [255, 255, 255], .3), a: .35 }
+      : e.moon.vis > .2 ? { x: L.moon.x, c: [255, 240, 205], a: .3 * e.moon.vis * e.moon.illum } : null;
+    if (src) {
+      g.save(); g.globalCompositeOperation = 'lighter';
+      for (let k = 1; k < 26; k++) {
+        const f = k / 26, y = hz + Math.pow(f, 1.4) * (H - hz) * .92;
+        const w = (.015 + f * .1) * W * (.55 + .45 * Math.sin(T * 1.6 + k * 1.7));
+        const off = Math.sin(T * .9 + k) * .01 * W;
+        g.fillStyle = rgba(src.c, src.a * (1 - f * .6));
+        g.fillRect(src.x * W - w / 2 + off, y, w, Math.max(1, 1.6 * DPR * (.5 + f)));
+      }
+      g.restore();
+    }
+    if (L.lamp && night > .2) {
+      const lx = L.lamp.x * W, ly = L.lamp.y * H, a = T * .7, len = .55 * W;
+      const toward = Math.max(0, Math.sin(a));
+      const ex = lx + Math.cos(a) * len;
+      g.save(); g.globalCompositeOperation = 'lighter';
+      const lg = g.createLinearGradient(lx, ly, ex, ly);
+      lg.addColorStop(0, `rgba(255,236,180,${.22 * night})`); lg.addColorStop(1, 'rgba(255,236,180,0)');
+      g.fillStyle = lg; g.beginPath(); g.moveTo(lx, ly);
+      g.lineTo(ex, ly - .035 * H * (.4 + toward)); g.lineTo(ex, ly + .035 * H * (.4 + toward)); g.closePath(); g.fill();
+      const rg = g.createRadialGradient(lx, ly, 0, lx, ly, (6 + 18 * toward) * DPR);
+      rg.addColorStop(0, `rgba(255,240,200,${.9 * night})`); rg.addColorStop(1, 'rgba(255,240,200,0)');
+      g.fillStyle = rg; g.fillRect(lx - 30 * DPR, ly - 30 * DPR, 60 * DPR, 60 * DPR);
+      g.restore();
+    }
+  }
+
+  // 雨 / 雪
+  if (scene.weather === 'rain') {
+    const col = mix([195, 208, 228], [95, 105, 130], 1 - e.amb);
+    g.strokeStyle = rgba(col, scene.heavy ? .42 : .32); g.lineWidth = DPR; g.beginPath();
+    for (const p of particles) {
+      p.y += p.spd * dt * 1.4; p.x += p.spd * dt * .25;
+      if (p.y > 1.05) { p.y = -.05; p.x = Math.random() * 1.2 - .2; }
+      const x = p.x * W, y = p.y * H;
+      g.moveTo(x, y); g.lineTo(x - p.len * .25 * H, y - p.len * H);
+    }
+    g.stroke();
+  } else if (scene.weather === 'snow') {
+    g.fillStyle = `rgba(250,252,255,${.55 + .35 * e.amb})`;
+    for (const p of particles) {
+      p.y += (.03 + p.z * .07) * dt; p.x += Math.sin(T * .8 + p.ph) * .012 * dt;
+      if (p.y > 1.03) { p.y = -.03; p.x = Math.random(); }
+      g.beginPath(); g.arc(p.x * W, p.y * H, (.7 + p.z * 2.1) * DPR, 0, TAU); g.fill();
+    }
+  }
+
+  g.drawImage(layers.near, 0, 0);
+
+  // 飄動的霧
+  if (scene.weather === 'fog') {
+    const fc = mix([40, 46, 66], [228, 232, 240], e.amb);
+    for (const f of L.fog) {
+      const x = ((f.ph + T * f.s) % 1.8 - .4) * W, y = f.y * H;
+      g.save(); g.translate(x, y); g.scale(1, .22);
+      const rg = g.createRadialGradient(0, 0, 0, 0, 0, f.w * W);
+      rg.addColorStop(0, rgba(fc, .32)); rg.addColorStop(1, rgba(fc, 0));
+      g.fillStyle = rg; g.fillRect(-f.w * W, -f.w * W, f.w * W * 2, f.w * W * 2);
+      g.restore();
+    }
+  }
+}
+
+/* ---------- 玻璃 ---------- */
+function paintGlassBase(g) {
+  g.clearRect(0, 0, W, H);
+  // 斜向反光
+  g.save(); g.globalCompositeOperation = 'lighter';
+  const lg = g.createLinearGradient(0, 0, W, H);
+  lg.addColorStop(.18, 'rgba(255,255,255,0)'); lg.addColorStop(.24, 'rgba(255,255,255,.05)');
+  lg.addColorStop(.3, 'rgba(255,255,255,0)'); lg.addColorStop(.62, 'rgba(255,255,255,0)');
+  lg.addColorStop(.66, 'rgba(255,255,255,.035)'); lg.addColorStop(.7, 'rgba(255,255,255,0)');
+  g.fillStyle = lg; g.fillRect(0, 0, W, H);
+  // 夜裡，玻璃映著房間的燈
+  const night = clamp((.5 - env.amb) / .4, 0, 1);
+  if (night > 0) {
+    const rx = .8 * W, ry = .62 * H;
+    const rg = g.createRadialGradient(rx, ry, 0, rx, ry, U * .09);
+    rg.addColorStop(0, `rgba(255,214,150,${.10 * night})`); rg.addColorStop(1, 'rgba(255,214,150,0)');
+    g.fillStyle = rg; g.fillRect(0, 0, W, H);
+  }
+  g.restore();
+}
+function paintSnowGlass(g) {
+  const r = mulberry32(scene.seed ^ 0x51ab);
+  // 角落的霜
+  for (const [cx, cy] of [[0, 0], [W, 0], [0, H], [W, H]]) {
+    const rg = g.createRadialGradient(cx, cy, 0, cx, cy, U * .22);
+    rg.addColorStop(0, 'rgba(235,242,250,.32)'); rg.addColorStop(1, 'rgba(235,242,250,0)');
+    g.fillStyle = rg; g.fillRect(0, 0, W, H);
+  }
+  const pile = (yb, hgt) => {
+    g.fillStyle = 'rgba(244,247,252,.95)'; g.beginPath(); g.moveTo(0, yb);
+    for (let x = 0; x <= W; x += W / 30) g.lineTo(x, yb - hgt * (.55 + r() * .45));
+    g.lineTo(W, yb); g.closePath(); g.fill();
+    g.fillStyle = 'rgba(170,185,210,.35)'; g.fillRect(0, yb - hgt * .25, W, hgt * .25);
+  };
+  pile(H, U * .022);
+  pile(H * H_BAR - BAR * DPR / 2, U * .014);
+  g.fillStyle = 'rgba(250,252,255,.8)';
+  for (let i = 0; i < 50; i++) {
+    const edge = r() < .5, x = edge ? (r() < .5 ? r() * .12 : 1 - r() * .12) * W : r() * W, y = edge ? r() * H : (r() < .5 ? r() * .12 : 1 - r() * .12) * H;
+    g.beginPath(); g.arc(x, y, (.6 + r() * 1.4) * DPR, 0, TAU); g.fill();
+  }
+}
+function drawDrop(g, x, y, r) {
+  g.fillStyle = 'rgba(255,255,255,.10)'; g.beginPath(); g.arc(x, y, r, 0, TAU); g.fill();
+  g.strokeStyle = 'rgba(0,0,0,.18)'; g.lineWidth = Math.max(.6, r * .3);
+  g.beginPath(); g.arc(x, y, r * .85, .15 * Math.PI, .85 * Math.PI); g.stroke();
+  g.fillStyle = 'rgba(255,255,255,.55)'; g.beginPath(); g.arc(x - r * .35, y - r * .35, r * .28, 0, TAU); g.fill();
+}
+function drawGlass(dt) {
+  const g = gctx;
+  if (scene.weather !== 'rain') {
+    if (glassDirty) { paintGlassBase(g); if (scene.weather === 'snow') paintSnowGlass(g); glassDirty = false; }
+    return;
+  }
+  paintGlassBase(g);
+  // 滑落的水痕
+  for (let i = ghosts.length - 1; i >= 0; i--) {
+    const gh = ghosts[i]; gh.a -= dt * .05;
+    if (gh.a <= 0) { ghosts.splice(i, 1); continue; }
+    g.strokeStyle = `rgba(255,255,255,${gh.a})`; g.lineWidth = gh.w;
+    g.beginPath(); g.moveTo(gh.x, gh.y0); g.lineTo(gh.x, gh.y1); g.stroke();
+  }
+  for (const d of drops) drawDrop(g, d.x, d.y, d.r);
+  // 新的水珠
+  const target = Math.round((W * H) / (5200 * DPR * DPR)) * (scene.heavy ? 1.4 : 1);
+  if (drops.length < target && Math.random() < dt * 30) drops.push(newDrop());
+  if (Math.random() < dt * (scene.heavy ? 1.6 : .8) && sliders.length < 8) {
+    sliders.push({ x: Math.random() * W, y: Math.random() * H * .5, y0: 0, r: (2.4 + Math.random() * 2.4) * DPR, v: 0, pause: 0 });
+    sliders[sliders.length - 1].y0 = sliders[sliders.length - 1].y;
+  }
+  for (let i = sliders.length - 1; i >= 0; i--) {
+    const s = sliders[i];
+    if (s.pause > 0) s.pause -= dt;
+    else {
+      s.v = Math.min(s.v + 400 * DPR * dt, 140 * DPR);
+      s.y += s.v * dt; s.x += Math.sin(s.y * .05) * .3;
+      if (Math.random() < dt * 1.5) { s.pause = .15 + Math.random() * .5; s.v = 0; }
+    }
+    for (let k = drops.length - 1; k >= 0; k--) {
+      const d = drops[k];
+      if (Math.abs(d.x - s.x) < s.r + d.r && d.y < s.y + s.r && d.y > s.y - s.r * 3) drops.splice(k, 1);
+    }
+    const lg = g.createLinearGradient(0, s.y0, 0, s.y);
+    lg.addColorStop(0, 'rgba(255,255,255,0)'); lg.addColorStop(1, 'rgba(255,255,255,.16)');
+    g.strokeStyle = lg; g.lineWidth = s.r * .7; g.beginPath(); g.moveTo(s.x, s.y0); g.lineTo(s.x, s.y); g.stroke();
+    drawDrop(g, s.x, s.y, s.r);
+    if (s.y > H + s.r) { ghosts.push({ x: s.x, y0: s.y0, y1: H, w: s.r * .5, a: .12 }); sliders.splice(i, 1); }
+  }
+}
+
+let lastFrame = performance.now();
+function frame(now) {
+  const dt = Math.min(.05, (now - lastFrame) / 1000); lastFrame = now; T += dt;
+  if (scene && env && W && layers.back) { drawSky(dt); drawGlass(dt); }
+  updateTimer();
+  requestAnimationFrame(frame);
+}
+
+/* =========================================================
+   文字
+   ========================================================= */
+function dayPart(h) {
+  if (h < 4) return '深夜'; if (h < 7) return '清晨'; if (h < 11) return '早上'; if (h < 13) return '中午';
+  if (h < 17) return '下午'; if (h < 19) return '傍晚'; if (h < 23) return '晚上'; return '深夜';
+}
+function clockText(info) {
+  const h12 = info.h % 12 === 0 ? 12 : info.h % 12;
+  return `${dayPart(info.h)} ${h12}:${String(info.mi).padStart(2, '0')}`;
+}
+function weatherPhrase() {
+  const w = scene.weather, e = env;
+  if (w === 'clear') return e.elev > 0 ? '天空很晴朗' : e.starVis > .4 ? '滿天都是星星' : '天色很清澈';
+  if (w === 'cloudy') return e.elev > 0 ? '天上的雲很多' : '雲遮住了大半的夜空';
+  if (w === 'rain') return scene.heavy ? '正在下雨' : '下著小雨';
+  if (w === 'snow') return '正在下雪';
+  return '起了霧';
+}
+function weatherLabel() {
+  const w = scene.weather;
+  return { clear: env.elev > 0 ? '晴' : '晴夜', cloudy: '多雲', rain: scene.heavy ? '雨' : '小雨', snow: '雪', fog: '霧' }[w];
+}
+function viewPhrase() {
+  const t = scene.loc.type;
+  if (t === 'city') return env.amb < .4 ? '遠處是城市的燈' : '對面是一片城市的屋頂';
+  if (t === 'sea') return '遠方是一片海';
+  if (t === 'mountain') return '窗外看得見山';
+  return '山坡上有幾戶人家';
+}
+function diffPhrase(info) {
+  const now = new Date();
+  const diff = info.offsetMin - (-now.getTimezoneOffset());
+  const dd = Math.round((Date.UTC(info.y, info.mo - 1, info.d) - Date.UTC(now.getFullYear(), now.getMonth(), now.getDate())) / 864e5);
+  let s;
+  if (diff === 0) s = '那裡跟你在同一個時刻';
+  else {
+    const a = Math.abs(diff), h = Math.floor(a / 60), m = a % 60;
+    let d = h ? `${h} 小時` : '';
+    if (m === 30 && h) d = `${h} 個半小時`;
+    else if (m) d += `${h ? ' ' : ''}${m} 分鐘`;
+    s = `那裡比你這裡${diff > 0 ? '快' : '慢'} ${d}`;
+  }
+  if (dd > 0) s += '，已經是明天了';
+  else if (dd < 0) s += '，還停在昨天';
+  return s;
+}
+function updateNote() {
+  const info = scene.info;
+  $('#noteMain').textContent = `現在是${clockText(info)}，${weatherPhrase()}。`;
+  $('#noteSub').textContent = `${viewPhrase()} · ${diffPhrase(info)}`;
+}
+function updateRoom() {
+  const e = env, rs = document.documentElement.style;
+  rs.setProperty('--wall', rgba(mix([13, 12, 19], [66, 58, 64], e.amb * .85)));
+  rs.setProperty('--spill', rgba(mix(e.bot, e.mid, .3), .08 + .2 * e.amb));
+  rs.setProperty('--curtainB', (.42 + .55 * e.amb).toFixed(3));
+}
+function durText(sec) {
+  const h = Math.floor(sec / 3600), m = Math.floor(sec / 60) % 60, s = sec % 60;
+  if (h) return `${h} 小時 ${m} 分`;
+  if (m) return `${m} 分 ${s} 秒`;
+  return `${s} 秒`;
+}
+
+/* =========================================================
+   聲音：全部用 Web Audio 即時合成，不需要音訊檔
+   ========================================================= */
+const Sound = (() => {
+  const KEY = 'strangerWindow.sound';
+  let ctx = null, master, muffle, noiseBuf, brownBuf, cur = null, pending = null, running = false, timer = 0, isOpen = false;
+  let pref = true;
+  try { pref = localStorage.getItem(KEY) !== 'off'; } catch (e) {}
+  const savePref = v => { pref = v; try { localStorage.setItem(KEY, v ? 'on' : 'off'); } catch (e) {} };
+
+  function init() {
+    if (ctx) return true;
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return false;
+    ctx = new AC();
+    master = ctx.createGain(); master.gain.value = 0; master.connect(ctx.destination);
+    // 窗簾 + 玻璃：關著的時候聲音是悶的
+    muffle = ctx.createBiquadFilter(); muffle.type = 'lowpass'; muffle.frequency.value = 650; muffle.Q.value = .3;
+    muffle.connect(master);
+    const len = ctx.sampleRate * 4;
+    noiseBuf = ctx.createBuffer(1, len, ctx.sampleRate);
+    brownBuf = ctx.createBuffer(1, len, ctx.sampleRate);
+    const nd = noiseBuf.getChannelData(0), bd = brownBuf.getChannelData(0);
+    let last = 0;
+    for (let i = 0; i < len; i++) {
+      nd[i] = Math.random() * 2 - 1;
+      last = (last + .02 * (Math.random() * 2 - 1)) / 1.02;
+      bd[i] = last * 3.5;
+    }
+    return true;
+  }
+
+  /* ---------- 小工具 ---------- */
+  const filt = (type, freq, Q = .7) => { const f = ctx.createBiquadFilter(); f.type = type; f.frequency.value = freq; f.Q.value = Q; return f; };
+  const panTo = (node, out, pan) => {
+    if (ctx.createStereoPanner) { const p = ctx.createStereoPanner(); p.pan.value = pan; node.connect(p); p.connect(out); }
+    else node.connect(out);
+  };
+  function env(g, t, peak, attack, release) {
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(peak, t + attack);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + attack + release);
+  }
+  function burst(buf, t, dur, chain, out) {
+    const s = ctx.createBufferSource(); s.buffer = buf; s.loop = true;
+    let n = s; for (const f of chain) { n.connect(f); n = f; }
+    s.start(t, Math.random() * 3, dur + .1);
+    return n;
+  }
+
+  /* ---------- 隨機事件 ---------- */
+  const EVENTS = {
+    drop(t, out) {                     // 水珠打在玻璃上
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      const f = 1800 + Math.random() * 3600;
+      o.frequency.setValueAtTime(f, t); o.frequency.exponentialRampToValueAtTime(f * .7, t + .04);
+      env(g, t, .015 + Math.random() * .04, .002, .04);
+      o.connect(g); panTo(g, out, Math.random() * 1.6 - .8);
+      o.start(t); o.stop(t + .08);
+    },
+    thunder(t, out) {                  // 遠雷
+      const g = ctx.createGain();
+      burst(brownBuf, t, 6, [filt('lowpass', 130)], out).connect(g);
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(.9, t + .5);
+      g.gain.exponentialRampToValueAtTime(.3, t + 1.6);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 6);
+      g.connect(out);
+    },
+    car(t, out) {                      // 遠處經過的車
+      const bp = filt('bandpass', 300, 1.2), g = ctx.createGain(), d = 4 + Math.random() * 2;
+      burst(noiseBuf, t, d, [bp], out).connect(g);
+      bp.frequency.setValueAtTime(260, t); bp.frequency.linearRampToValueAtTime(620, t + d / 2); bp.frequency.linearRampToValueAtTime(240, t + d);
+      g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(.05, t + d / 2); g.gain.linearRampToValueAtTime(0.0001, t + d);
+      if (ctx.createStereoPanner) {
+        const p = ctx.createStereoPanner(), dir = Math.random() < .5 ? -1 : 1;
+        p.pan.setValueAtTime(-.8 * dir, t); p.pan.linearRampToValueAtTime(.8 * dir, t + d);
+        g.connect(p); p.connect(out);
+      } else g.connect(out);
+    },
+    bird(t, out) {                     // 鳥叫
+      const n = 2 + Math.floor(Math.random() * 4), base = 2400 + Math.random() * 1400, pan = Math.random() * 1.6 - .8;
+      for (let i = 0; i < n; i++) {
+        const tt = t + i * (.1 + Math.random() * .06);
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.frequency.setValueAtTime(base, tt); o.frequency.exponentialRampToValueAtTime(base * (1.3 + Math.random() * .3), tt + .06);
+        env(g, tt, .02 + Math.random() * .015, .01, .07);
+        o.connect(g); panTo(g, out, pan);
+        o.start(tt); o.stop(tt + .1);
+      }
+    },
+    cricket(t, out) {                  // 蟲鳴
+      const f = 4200 + Math.random() * 500, pan = Math.random() * 1.4 - .7;
+      for (let i = 0; i < 3; i++) {
+        const tt = t + i * .045, o = ctx.createOscillator(), g = ctx.createGain();
+        o.frequency.value = f;
+        env(g, tt, .008, .004, .022);
+        o.connect(g); panTo(g, out, pan);
+        o.start(tt); o.stop(tt + .04);
+      }
+    },
+    foghorn(t, out) {                  // 霧笛
+      const g = ctx.createGain(), lp = filt('lowpass', 380);
+      for (const fr of [98, 146.8]) { const o = ctx.createOscillator(); o.type = 'sawtooth'; o.frequency.value = fr; o.connect(lp); o.start(t); o.stop(t + 3.4); }
+      lp.connect(g);
+      g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(.06, t + .6);
+      g.gain.setValueAtTime(.06, t + 2.2); g.gain.linearRampToValueAtTime(0.0001, t + 3.3);
+      g.connect(out);
+    },
+  };
+
+  /* ---------- 環境音 ---------- */
+  function build(p) {
+    const t = ctx.currentTime;
+    const out = ctx.createGain(); out.gain.value = 0; out.connect(muffle);
+    const nodes = [], events = [];
+    const loop = (buf, chain, gain) => {
+      const s = ctx.createBufferSource(); s.buffer = buf; s.loop = true;
+      let n = s; for (const f of chain) { n.connect(f); n = f; }
+      const g = ctx.createGain(); g.gain.value = gain; n.connect(g); g.connect(out);
+      s.start(t, Math.random() * 3); nodes.push(s);
+      return g;
+    };
+    const lfo = (rate, depth, param) => {
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.frequency.value = rate; g.gain.value = depth; o.connect(g); g.connect(param);
+      o.start(t); nodes.push(o);
+    };
+
+    if (p.weather === 'rain') {
+      loop(noiseBuf, [filt('highpass', 500), filt('lowpass', p.heavy ? 7000 : 5000)], p.heavy ? .2 : .12);
+      loop(brownBuf, [filt('lowpass', 500)], .22);
+      events.push({ rate: p.heavy ? 14 : 7, fn: 'drop' });
+      if (p.heavy) events.push({ rate: 1 / 35, fn: 'thunder' });
+    } else {
+      const base = { clear: .08, cloudy: .12, snow: .07, fog: .1 }[p.weather] * (p.type === 'mountain' ? 1.4 : 1);
+      const f = filt('lowpass', 480, .8);
+      const g = loop(brownBuf, [f], base);
+      lfo(.07, 260, f.frequency); lfo(.045, base * .6, g.gain);
+    }
+    if (p.type === 'sea') {
+      const g = loop(brownBuf, [filt('lowpass', 650)], .22); lfo(.11, .17, g.gain);
+      const h = loop(noiseBuf, [filt('bandpass', 1800, .5)], .03); lfo(.11, .026, h.gain);
+      if (p.weather === 'fog') events.push({ rate: 1 / 26, fn: 'foghorn' });
+    }
+    if (p.type === 'city') {
+      loop(brownBuf, [filt('lowpass', 170)], .32);
+      events.push({ rate: 1 / 9, fn: 'car' });
+    }
+    const dry = p.weather !== 'rain' && p.weather !== 'snow';
+    if (dry && p.amb > .35) events.push({ rate: p.type === 'city' ? 1 / 10 : 1 / 5, fn: 'bird' });
+    if (dry && p.amb < .25 && ['summer', 'tropical', 'autumn'].includes(p.season)) events.push({ rate: 1.2, fn: 'cricket' });
+
+    out.gain.setTargetAtTime(1, t, .9);
+    return { out, nodes, events };
+  }
+  function dispose(a) {
+    if (!a) return;
+    a.out.gain.cancelScheduledValues(ctx.currentTime);
+    a.out.gain.setTargetAtTime(0, ctx.currentTime, .7);
+    a.events = [];
+    setTimeout(() => { for (const n of a.nodes) { try { n.stop(); } catch (e) {} } a.out.disconnect(); }, 4000);
+  }
+  function tick() {
+    if (!running || !cur || ctx.state !== 'running') return;
+    for (const ev of cur.events) {
+      if (Math.random() < ev.rate * .1) EVENTS[ev.fn](ctx.currentTime + .02 + Math.random() * .08, cur.out);
+    }
+  }
+
+  /* ---------- 對外介面 ---------- */
+  return {
+    get on() { return running; },
+    get pref() { return pref; },
+    start() {
+      if (!init()) return false;
+      ctx.resume();
+      running = true; savePref(true);
+      master.gain.cancelScheduledValues(ctx.currentTime);
+      master.gain.setTargetAtTime(.85, ctx.currentTime, .6);
+      muffle.frequency.setValueAtTime(isOpen ? 16000 : 650, ctx.currentTime);
+      if (pending) { dispose(cur); cur = build(pending); pending = null; }
+      clearInterval(timer); timer = setInterval(tick, 100);
+      return true;
+    },
+    stop() {
+      running = false; savePref(false);
+      clearInterval(timer);
+      if (!ctx) return;
+      master.gain.setTargetAtTime(0, ctx.currentTime, .25);
+      setTimeout(() => { if (!running) ctx.suspend(); }, 900);
+    },
+    setScene(p) {
+      if (!running) { pending = p; return; }
+      dispose(cur); cur = build(p);
+    },
+    setOpen(open) {
+      isOpen = open;
+      if (!ctx) return;
+      muffle.frequency.setTargetAtTime(open ? 16000 : 650, ctx.currentTime, open ? .7 : .45);
+    },
+    curtain(opening) {                  // 拉窗簾的布料聲
+      if (!running) return;
+      const t = ctx.currentTime, bp = filt('bandpass', 1000, .8), g = ctx.createGain();
+      burst(noiseBuf, t, 2.4, [bp], master).connect(g);
+      bp.frequency.setValueAtTime(opening ? 600 : 2200, t);
+      bp.frequency.exponentialRampToValueAtTime(opening ? 2200 : 600, t + 2.2);
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(.06, t + .35);
+      g.gain.linearRampToValueAtTime(.04, t + 1.6);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 2.4);
+      g.connect(master);
+    },
+    chime() {                           // 找到窗時的輕鈴聲
+      if (!running) return;
+      const t = ctx.currentTime;
+      [[784, 0], [1175, .14]].forEach(([f, d]) => {
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.frequency.value = f; env(g, t + d, .035, .01, 2.4);
+        o.connect(g); g.connect(master); o.start(t + d); o.stop(t + d + 2.6);
+      });
+    },
+    pause() { if (ctx && running) ctx.suspend(); },
+    resume() { if (ctx && running) ctx.resume(); },
+  };
+})();
+
+function soundParams() {
+  return { weather: scene.weather, heavy: scene.heavy, type: scene.loc.type, amb: env.amb, season: season(scene.loc.lat, scene.info.mo) };
+}
+function updateSoundBtn() {
+  const b = $('#btnSound');
+  b.textContent = Sound.on ? '關閉聲音' : '開啟聲音';
+  b.setAttribute('aria-pressed', String(Sound.on));
+}
+
+/* =========================================================
+   場景生命週期
+   ========================================================= */
+function newScene() {
+  const loc = pickLocation(scene && scene.loc.tz);
+  const info = tzInfo(loc.tz);
+  scene = {
+    loc, info,
+    weather: pickWeather(loc.lat, info.mo),
+    heavy: Math.random() < .4,
+    seed: (Math.random() * 4294967296) >>> 0,
+  };
+  scene.layout = makeLayout(scene);
+  shooting = null;
+  initParticles();
+  refreshEnv(true);
+  Sound.setScene(soundParams());
+}
+function refreshEnv(force) {
+  if (!scene) return;
+  const info = tzInfo(scene.loc.tz);
+  const key = info.h * 60 + info.mi;
+  if (!force && key === scene.lastKey) return;
+  scene.lastKey = key; scene.info = info;
+  env = computeEnv(scene, info);
+  paintStatic(); updateNote(); updateRoom();
+}
+
+/* ---------- 窗簾與狀態 ---------- */
+const stage = $('#stage');
+let state = 'intro', openedAt = 0, lastTimerText = '';
+
+function setControls(on) { $('#btnClose').disabled = !on; $('#btnNext').disabled = !on; }
+function showStatus(t) { const s = $('#status'); s.textContent = t; s.classList.add('show'); }
+function hideStatus() { $('#status').classList.remove('show'); }
+
+function openCurtains() {
+  state = 'opening';
+  stage.classList.add('open');
+  openedAt = performance.now();
+  $('#note').classList.add('show');
+  $('#timer').classList.add('show');
+  Sound.curtain(true); Sound.setOpen(true);
+  setTimeout(() => Sound.chime(), 1200);
+  setTimeout(() => { state = 'open'; setControls(true); }, 1800);
+}
+function closeCurtains() {
+  stage.classList.remove('open');
+  Sound.curtain(false); Sound.setOpen(false);
+  $('#note').classList.remove('show');
+  $('#timer').classList.remove('show');
+}
+function updateTimer() {
+  if (state !== 'open' && state !== 'opening') return;
+  const s = Math.floor((performance.now() - openedAt) / 1000);
+  const h = Math.floor(s / 3600), m = Math.floor(s / 60) % 60, ss = s % 60;
+  const t = `你們已經一起看了 ${h ? h + ':' + String(m).padStart(2, '0') : String(m).padStart(2, '0')}:${String(ss).padStart(2, '0')}`;
+  if (t !== lastTimerText) { $('#timer').textContent = t; lastTimerText = t; }
+}
+
+function leaveWindow(next) {
+  if (state !== 'open') return;
+  state = 'closing';
+  const secs = Math.max(1, Math.round((performance.now() - openedAt) / 1000));
+  storeCurrent(secs);
+  setControls(false);
+  closeCurtains();
+  setTimeout(() => {
+    if (next === 'another') findAnother('正在替你尋找另一扇窗……');
+    else { state = 'closed'; $('#endText').textContent = `你看了 ${durText(secs)}的天空。`; $('#ending').classList.add('show'); }
+  }, 2500);
+}
+function findAnother(msg) {
+  state = 'finding';
+  showStatus(msg);
+  setTimeout(() => {
+    newScene();
+    setTimeout(() => { hideStatus(); openCurtains(); }, 500);
+  }, 1500);
+}
+
+/* =========================================================
+   收藏牆
+   ========================================================= */
+let wall = loadWall();
+function loadWall() {
+  try { const v = JSON.parse(localStorage.getItem(STORE_KEY) || '[]'); return Array.isArray(v) ? v : []; }
+  catch (e) { return []; }
+}
+function persistWall() {
+  const list = wall.slice();
+  while (list.length) {
+    try { localStorage.setItem(STORE_KEY, JSON.stringify(list)); return; }
+    catch (e) { list.splice(0, Math.max(1, Math.ceil(list.length / 4))); }   // 空間不足時丟掉最舊的
+  }
+}
+function snapshot() {
+  const w = 480, h = Math.round(480 * H / W);
+  const c = mkCanvas(w, h), g = c.getContext('2d');
+  g.drawImage(skyC, 0, 0, w, h); g.drawImage(glassC, 0, 0, w, h);
+  const bw = Math.max(3, BAR * DPR * w / W);
+  g.fillStyle = '#5b3f2a';
+  g.fillRect(w / 2 - bw / 2, 0, bw, h);
+  g.fillRect(0, h * H_BAR - bw / 2, w, bw);
+  try { return c.toDataURL('image/jpeg', .8); } catch (e) { return ''; }
+}
+function storeCurrent(secs) {
+  const img = snapshot(); if (!img) return;
+  wall.push({
+    id: Date.now(), img,
+    time: clockText(scene.info),
+    weather: weatherLabel(),
+    sentence: `現在是${clockText(scene.info)}，${weatherPhrase()}。`,
+    sub: viewPhrase(),
+    secs, seenAt: Date.now(),
+  });
+  if (wall.length > MAX_WALL) wall.splice(0, wall.length - MAX_WALL);
+  persistWall();
+}
+function dateText(ts) { const d = new Date(ts); return `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()}`; }
+
+function renderWall() {
+  const grid = $('#wallGrid'); grid.textContent = '';
+  $('#wallEmpty').style.display = wall.length ? 'none' : 'block';
+  $('#btnClear').style.display = wall.length ? '' : 'none';
+  $('#wallSub').textContent = wall.length ? `你曾經看過 ${wall.length} 扇窗` : '';
+  for (const it of wall.slice().reverse()) {
+    const b = document.createElement('button'); b.className = 'wi';
+    const pic = document.createElement('span'); pic.className = 'pic';
+    const img = document.createElement('img'); img.src = it.img; img.alt = `${it.time}，${it.weather}`; img.loading = 'lazy';
+    pic.appendChild(img);
+    const c1 = document.createElement('span'); c1.className = 'c1'; c1.textContent = `${it.time} · ${it.weather}`;
+    const c2 = document.createElement('span'); c2.className = 'c2'; c2.textContent = `看了 ${durText(it.secs)} · ${dateText(it.seenAt)}`;
+    b.append(pic, c1, c2);
+    b.addEventListener('click', () => openLightbox(it));
+    grid.appendChild(b);
+  }
+}
+function openWall() { renderWall(); $('#wall').classList.add('show'); }
+function closeWall() { $('#wall').classList.remove('show'); }
+function openLightbox(it) {
+  $('#lbImg').src = it.img;
+  const cap = $('#lbCap'); cap.textContent = '';
+  cap.append(`這扇窗的另一邊，${it.sentence}`);
+  const sm = document.createElement('small'); sm.textContent = `${it.sub} · 你在 ${dateText(it.seenAt)} 看了 ${durText(it.secs)}`;
+  cap.appendChild(sm);
+  $('#lightbox').classList.add('show');
+}
+
+/* =========================================================
+   事件
+   ========================================================= */
+$('#btnClose').addEventListener('click', () => leaveWindow('ending'));
+$('#btnNext').addEventListener('click', () => leaveWindow('another'));
+$('#btnWall').addEventListener('click', openWall);
+$('#btnWall2').addEventListener('click', openWall);
+$('#btnWallClose').addEventListener('click', closeWall);
+$('#btnAgain').addEventListener('click', () => {
+  $('#ending').classList.remove('show');
+  findAnother('正在替你尋找一扇窗……');
+});
+$('#btnClear').addEventListener('click', () => {
+  if (!confirm('確定要清空所有收藏的窗嗎？這個動作無法復原。')) return;
+  wall = [];
+  try { localStorage.removeItem(STORE_KEY); } catch (e) {}
+  renderWall();
+});
+$('#lightbox').addEventListener('click', () => $('#lightbox').classList.remove('show'));
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Escape') return;
+  if ($('#lightbox').classList.contains('show')) $('#lightbox').classList.remove('show');
+  else if ($('#wall').classList.contains('show')) closeWall();
+});
+
+$('#btnSound').addEventListener('click', () => {
+  if (Sound.on) Sound.stop(); else Sound.start();
+  updateSoundBtn();
+});
+// 瀏覽器規定要有一次互動才能播放聲音：上次沒關掉聲音的話，第一次點擊就自動開啟
+function firstGesture(e) {
+  if (e.target.closest && e.target.closest('#btnSound')) return;
+  document.removeEventListener('pointerdown', firstGesture);
+  document.removeEventListener('keydown', firstGesture);
+  if (Sound.pref && !Sound.on) { Sound.start(); updateSoundBtn(); $('#introHint').classList.add('on'); }
+}
+document.addEventListener('pointerdown', firstGesture);
+document.addEventListener('keydown', firstGesture);
+document.addEventListener('visibilitychange', () => document.hidden ? Sound.pause() : Sound.resume());
+if (!Sound.pref) $('#introHint').textContent = '聲音已關閉，可以在下方開啟';
+
+let resizeTimer = 0;
+new ResizeObserver(() => { clearTimeout(resizeTimer); resizeTimer = setTimeout(resize, 120); }).observe(view);
+setInterval(() => refreshEnv(false), 15000);
+
+/* =========================================================
+   開場
+   ========================================================= */
+resize();
+newScene();
+requestAnimationFrame(frame);
+setTimeout(() => $('#intro').classList.add('gone'), 3800);
+setTimeout(openCurtains, 4600);
+
+/* 開發用：在網址加上 ?debug 可以在 console 用 strangerWindow 檢視狀態 */
+if (location.search.includes('debug')) window.strangerWindow = { get scene() { return scene; }, get env() { return env; }, newScene, refreshEnv };
+})();
+</script>
+</body>
+</html>
